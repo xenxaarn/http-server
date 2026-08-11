@@ -1,9 +1,16 @@
 # HTTP Server from Scratch in C
-<p>A very minimal Http server</p>
+A very minimal Http server
 ## How to run ?
-- Clone the repo 
-- Use `gcc` Or `make` to compile
-- If your using ***gcc*** run `gcc -o server server.c`
-- If your using ***make*** run `make server`
-- Run it after compiling `./server`
+- Clone the repo:
+```bash
+git clone https://github.com/xenxaarn/http-server.git
+```
+- Use ***gcc*** to compile:
+```bash
+gcc -o server server.c
+```
+- To run:
+```bash
+./server
+```
 
