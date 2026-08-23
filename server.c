@@ -17,8 +17,8 @@ int main(void) {
   }
 
   my_addr.sin_family = AF_INET;
-  my_addr.sin_port = htons(8080);                        // port
-  my_addr.sin_addr.s_addr = inet_addr("192.168.18.255"); // ip
+  my_addr.sin_port = htons(8080);       // port
+  my_addr.sin_addr.s_addr = INADDR_ANY; // any ip
   memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
   // bind
@@ -29,7 +29,7 @@ int main(void) {
 
   if (bind_result < 0) {
     perror("Bind error");
-    return 1;
+    return -1;
   }
 
   // listening
@@ -38,7 +38,19 @@ int main(void) {
 
   printf("Listen result is: %d\n", listen_res);
 
-  close(socket_fd);
+  while (1) {
+    sleep(1);
+    printf("Waiting for connections ...\n");
 
-  return 0;
+    // accept [im not done with this part yet]
+    struct sockaddr_in addr_size;
+    addr_size = sizeof their_addr;
+    int new_fd = accept(socket_fd, (struct sockaddr *)&their_addr, &addr_size);
+
+    if (new_fd < 0) {
+      perror("Accept Error");
+      continue;
+    }
+  }
+  close(socket_fd);
 }
