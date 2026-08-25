@@ -42,15 +42,16 @@ int main(void) {
     sleep(1);
     printf("Waiting for connections ...\n");
 
-    // accept [im not done with this part yet]
-    struct sockaddr_in addr_size;
-    addr_size = sizeof their_addr;
-    int new_fd = accept(socket_fd, (struct sockaddr *)&their_addr, &addr_size);
+    // accept
+    struct sockaddr_in client_addr;
+    socklen_t addr_size = sizeof(client_addr);
+    int new_fd = accept(socket_fd, (struct sockaddr *)&my_addr, &addr_size);
 
     if (new_fd < 0) {
       perror("Accept Error");
       continue;
     }
+    printf("Client Connected\n");
   }
   close(socket_fd);
 }
