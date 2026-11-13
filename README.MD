@@ -5,9 +5,9 @@ A very minimal Http server
 ```bash
 git clone https://github.com/xenxaarn/http-server.git
 ```
-- Use ***gcc*** to compile:
+- Compile:
 ```bash
-gcc -o server server.c
+make
 ```
 - To run:
 ```bash
