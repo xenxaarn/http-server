@@ -5,33 +5,36 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 int main(void) {
-  // socket
+  signal(SIGPIPE, SIG_IGN);
+  signal(SIGCHLD, SIG_IGN);
+
   struct sockaddr_in my_addr;
-  int socket_fd;
-  socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+  int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    perror("Socket Error\n");
-    return -1;
+    perror("socket");
+    return EXIT_FAILURE;
   }
 
-  my_addr.sin_family = AF_INET;         // ipv4
-  my_addr.sin_port = htons(8080);       // port
-  my_addr.sin_addr.s_addr = INADDR_ANY; // any ip
-  memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
+  int opt = 1;
+  setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt);
+
+  memset(&my_addr, 0, sizeof my_addr);
+  my_addr.sin_family = AF_INET;   //ipv4
+  my_addr.sin_port = htons(8080); //port
+  my_addr.sin_addr.s_addr = htonl(INADDR_ANY); //any-ip
 
   // bind
-  struct sockaddr addr;
-  int bind_result =
-      bind(socket_fd, (struct sockaddr *)&my_addr, sizeof(my_addr));
-  printf("Bind result is: %d\n", bind_result);
-
-  if (bind_result < 0) {
-    perror("Bind error\n");
-    return -1;
+  if (bind(socket_fd, (struct sockaddr *)&my_addr, sizeof my_addr) < 0) {
+    perror("bind");
+    close(socket_fd);
+    return EXIT_FAILURE;
   }
-
   // listening
   int backlog = 15;
   int listen_res = listen(socket_fd, backlog);
