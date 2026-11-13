@@ -36,10 +36,12 @@ int main(void) {
     return EXIT_FAILURE;
   }
   // listening
-  int backlog = 15;
-  int listen_res = listen(socket_fd, backlog);
-
-  printf("Listen result is: %d\n", listen_res);
+  if (listen(socket_fd, 15) < 0) {
+    perror("listen");
+    close(socket_fd);
+    return EXIT_FAILURE;
+  }
+  printf("Listening on port 8080 ...\n");
 
   while (1) {
     printf("Waiting for connections ...\n");
@@ -50,28 +52,51 @@ int main(void) {
     int new_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_size);
 
     if (new_fd < 0) {
-      perror("Accept Error\n");
+      if (errno == EINTR) continue;
+      perror("accept");
       continue;
     }
-    printf("Client Connected\n");
+    printf("Client connected\n");
 
     // send
-    const char *http_response = "HTTP/1.1 200 OK\r\n"
-                                "Content-Type: text/html\r\n"
-                                "Content-Length: 46\r\n"
-                                "Connection: close\r\n"
-                                "\r\n"
-                                "<html><body><h1>Hello!!</h1></body></html>";
+    struct timeval tv = {.tv_sec = 5, .tv_usec = 0};
+    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
 
-    char buffer[2048] = {0};
-    ssize_t bytes_received = recv(new_fd, buffer, sizeof(buffer) - 1, 0);
-    // recv
+    char buffer[2048];
+    ssize_t bytes_received = recv(new_fd, buffer, sizeof buffer - 1, 0);
+
     if (bytes_received > 0) {
-      printf("Client :%s\n", buffer);
-      send(new_fd, http_response, strlen(http_response), 0);
+      buffer[bytes_received] = '\0';
+      printf("Client: %s\n", buffer);
+
+      const char *body = "<html><body><h1>Hello, World!!</h1></body></html>";
+      char response[512];
+      int n = snprintf(response, sizeof response,
+                       "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/html\r\n"
+                       "Content-Length: %zu\r\n"
+                       "Connection: close\r\n"
+                       "\r\n"
+                       "%s",
+                       strlen(body), body);
+
+      size_t sent = 0, len = (size_t)n;
+      while (sent < len) {
+        ssize_t w = send(new_fd, response + sent, len - sent, 0);
+        if (w <= 0) {
+          if (w < 0 && errno == EINTR) continue;
+          break;
+        }
+        sent += (size_t)w;
+      }
+    } else if (bytes_received == 0) {
+      printf("Client: closed without sending data\n");
+    } else {
+      if (errno != EAGAIN && errno != EWOULDBLOCK) perror("recv");
     }
+
     close(new_fd);
   }
   close(socket_fd);
-  return 0;
+  return EXIT_SUCCESS;
 }
